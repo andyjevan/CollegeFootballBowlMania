@@ -1,0 +1,296 @@
+import math
+import pandas as pd
+
+def get_conference(conference):
+    if conference[:3] == "Big":
+        if conference[-2:] == "12":
+            return "B12"
+        else:
+            return "B10"
+    elif conference == "CUSA":
+        return "USA"
+    else:
+        return conference[:3]
+
+
+id = 0
+class team():
+    def __init__(self, name, id, conf = "FCS"):
+        self.teamid = id
+        self.name = name
+        self.wins = 0
+        self.losses = 0
+        self.rankedwins = 0
+        self.rankedgames = 0
+        self.gamesranked = 0
+        self.conf = conf
+        self.highestranked = -1
+        self.gameslist = []
+        
+
+    def __str__(self):
+        return self.name + " " + str(self.wins) +'-'+str(self.losses) + " Highest Rank " + str(self.highestranked) + " Ranked Record " + str(self.rankedwins) + "-" + str(self.rankedloses())
+
+    def getname(self):
+        return self.name
+
+    def getid(self):
+        return self.teamid
+
+    def rankedloses(self):
+        ls = self.rankedgames - self.rankedwins
+        return str(ls)
+
+    def gamelist(self, score, oppid):
+        self.gameslist.append([score, oppid])
+
+    def setrank(self, rank):
+        self.gamesranked += 1
+        if self.highestranked == -1:
+            self.highestranked = rank
+            return
+        elif self.highestranked > rank:
+            self.highestranked = rank
+
+    def rankoppwin(self):
+        self.rankedwins += 1
+        self.rankedgames += 1
+        self.wins += 1
+
+    def rankopploss(self):
+        self.rankedgames += 1
+        self.losses += 1
+
+    def win(self):
+        self.wins += 1
+
+    def lose(self):
+        self.losses += 1
+
+    def recordagainstconference(self, conference):
+        wins = 0
+        loses = 0
+        for t in range(len(self.gameslist)):
+            testid = team.gameslist[t][1]
+            if conference == teamlist[teamid].conf:
+                thisgame = team.gameslist[t][0]
+                if thisgame[-5:] == "LOSER":
+                    loses += 1
+                else:
+                    wins += 1
+    
+        return [wins, loses]
+
+
+
+
+teamdf = pd.DataFrame( {"name":[], "wins":[], "losses":[], "rankedwins":[], "rankedgames":[], "height":[], "gamesranked":[], "conference":[]})
+print(teamdf)
+teams = set()
+#read week file txt program
+def readweek(week, weekn):
+    #give away a string name thats global
+    away = 'pass'
+    #read the txt file
+    f = open(week, 'r')
+    #traverse through the file
+    for i in f.readlines():
+        #filter for lines only about teams
+        if i[0:3] not in ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'] and i != 'Other Games This Week\n':
+            #check if top/away team
+            if i[-6:].__eq__('Final\n'):
+                away = i
+            #after getting the away team, home team is next in txt file
+            else:
+                home = i
+                homelist = home.split()
+                awaylist = away.split()
+                #print(homelist, awaylist)
+
+                #declare variables for doing calcs on teams
+                awayteam = ''
+                hometeam = ''
+                awaytrue = True
+                hometrue = True
+                awayfalse = False
+                homefalse = False
+                awayrank = -1
+                homerank = -1
+                awayscore = -1
+                homescore = -1
+                homescorestring = ""
+                awayscorestring = ""
+                #traverse through each character in line (away team) to get name, rank, and score
+                for n in range(0, len(away)):
+                    if not away[n].isdigit() and awaytrue and away[n] != '(':
+                        awayteam += away[n]
+                    else:
+                        awaytrue = False
+                        #check for rank or which miami
+                        if away[n] == '(':
+                            if away[n+2] == ')':
+                                awayrank = int(away[n+1])
+                            test = away[n+1:n+3]
+                            if test.isdigit():
+                                awayrank = int(test)
+                            #check if "rank" is school
+                            elif test == 'FL' or test == 'OH':
+                                awayteam += "(" + test + ")"
+                                #awaytrue = True
+                
+                for score in awaylist:
+                    if score.isdigit():
+                        awayscore = int(score)
+
+                awayteam = awayteam.strip()
+
+                #repeat the same traversal for home team
+                for n in range(0, len(home)):
+                    if not home[n].isdigit() and hometrue and home[n] != '(':
+                        hometeam += home[n]
+                    else:
+                        hometrue = False
+                        #check for rank or which miami
+                        if home[n] == '(':
+                            if home[n+2] == ')':
+                                homerank = int(home[n+1])
+                            test = home[n+1:n+3]
+                            if test.isdigit():
+                                homerank = int(test)
+                            elif test == 'FL' or test == 'OH':
+                                hometeam += "(" + test + ")"
+                                #hometrue = True
+                        #get score
+                for score in homelist:
+                    if score.isdigit():
+                        homescore = int(score)
+                #print(awayteam, awayscorestring, hometeam,homescorestring)
+                #if homescore == -1:
+                #    homescore = int(home[-7:-4])
+                hometeam = hometeam.strip()
+                #print(homerank, hometeam, homescore)
+                A = None
+                H = None
+
+
+                if awayteam not in teams:
+                    teamlist.append(team(awayteam, len(teamlist)))
+                    teams.add(awayteam)
+                if hometeam not in teams:
+                    teamlist.append(team(hometeam, len(teamlist)))
+                    teams.add(hometeam)
+
+                awayn = -1
+                homen = -1
+                for m in teamlist:
+                    if m.getname() == awayteam:
+                        A = m
+                        awayn = m.getid()
+                    elif m.getname() == hometeam:
+                        H = m
+                        homen = m.getid()
+
+                #track games
+                scorestringaway = "Played at " + hometeam + " and the score was " + str(awayscore) + " to " + str(homescore)
+                scorestringhome = "Played against " + awayteam + " and the score was " + str(homescore) + " to " + str(awayscore)
+
+                if homerank != -1 and awayrank != -1:
+                    scorestringaway = "#" + str(awayrank) + " Played at #" + str(homerank) + " " + hometeam + " and the score was " + str(awayscore) + " to " + str(homescore)
+                    scorestringhome = "#" + str(homerank) + " Played against " + "#" + str(awayrank) + " " + awayteam + " and the score was " + str(homescore) + " to " + str(awayscore)
+                elif homerank != -1:
+                    scorestringhome = "#" + str(homerank) + " Played against " + awayteam + " and the score was " + str(homescore) + " to " + str(awayscore)
+                    scorestringaway = "Played at #" + str(homerank) + " " + hometeam + " and the score was " + str(awayscore) + " to " + str(homescore)
+                elif awayrank != -1:
+                    scorestringaway = "#" + str(awayrank) + " Played at " + hometeam + " and the score was " + str(awayscore) + " to " + str(homescore)
+                    scorestringhome = "Played against #" + str(awayrank) + " " + awayteam + " and the score was " + str(homescore) + " to " + str(awayscore)
+
+                
+                homeloser = True
+                #print(homescore, awayscore)
+                if homescore > awayscore:
+                    homeloser = False
+                    if homerank != -1 and awayrank != -1:
+                        H.rankoppwin()
+                        A.setrank(awayrank)
+                        H.setrank(homerank)
+                        A.rankopploss()
+                    elif awayrank != -1:
+                        H.rankoppwin()
+                        A.setrank(awayrank)
+                        A.lose()
+                    elif homerank != -1:
+                        H.setrank(homerank)
+                        H.win()
+                        A.rankopploss()
+                    else:
+                        H.win()
+                        A.lose()
+
+                else:
+                    if homerank != -1 and awayrank != -1:
+                        A.rankoppwin()
+                        A.setrank(awayrank)
+                        H.setrank(homerank)
+                        H.rankopploss()
+                    elif homerank != -1:
+                        A.rankoppwin()
+                        H.setrank(homerank)
+                        H.lose()
+                    elif awayrank != -1:
+                        A.setrank(awayrank)
+                        A.win()
+                        H.rankopploss()
+                    else:
+                        A.win()
+                        H.lose()
+
+                #append loser to losses
+                if homeloser:
+                    scorestringhome += " LOSER"
+                else:
+                    scorestringaway += " LOSER"
+
+                H.gamelist(scorestringhome, A.getid())
+                A.gamelist(scorestringaway, H.getid())
+                teamlist[awayn] = A
+                teamlist[homen] = H
+
+                #print(A)
+                #print(H)
+                #print(teamlist)
+                        
+                    
+                    
+            
+    #print(f.read())
+teamid = {}
+teamlist = []
+import csv
+with open('fbsschools.csv', mode ='r') as file:
+    csvFile = csv.reader(file)
+    for lines in csvFile:
+        #print(lines)
+        teamlist.append(team(lines[1], len(teamlist), get_conference(lines[2])))
+        teams.add(lines[1])
+for i in range(0,14):
+    istring = str(i)
+    string = "week" + istring + ".txt"
+    #print(string)
+    readweek(string, i)
+
+
+
+for team in teamlist:
+    if ((team.wins + team.losses) > 10 and team.highestranked > 0):
+        print(team)
+        print(team.recordagainstconference(team.conf))
+        #print(team.gameslist)
+        #for t in range(len(team.gameslist)):
+            #print(team.gameslist[t])
+
+
+
+
+
+        
+    
